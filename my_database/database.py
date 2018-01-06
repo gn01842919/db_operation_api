@@ -37,8 +37,12 @@ class MyMariaDB:
         else:
             self._conn = mysql.connector.connect(**self.config)
             self.cursor = self._conn.cursor()
+            if not self.cursor:
+                raise RuntimeError('Fail to establish a mysql cursor.')
+
             if self.verbose:
                 print("[+] A database connection has been established.")
+
             return self
 
     def close(self):
@@ -65,9 +69,13 @@ class MyMariaDB:
         return bool(rows)
 
     def table_already_exists(self, table_name):
-        query = ("SELECT table_schema FROM INFORMATION_SCHEMA.TABLES "
+
+        current_db = self.execute_sql_command('SELECT DATABASE();')[0][0]
+
+        query = ("SELECT table_name FROM INFORMATION_SCHEMA.TABLES "
                  "WHERE table_schema = '{}' AND table_name = %s LIMIT 1;"
-                 .format(self.config['database']))
+                 .format(current_db))
 
         rows = self.execute_sql_command(query, table_name)
+
         return bool(rows)
