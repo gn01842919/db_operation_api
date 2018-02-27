@@ -1,20 +1,19 @@
 import unittest
-from database import MyPostgreSqlDB
-import psycopg2
+import database
 import mysql.connector
 import time
 
 
-class MyPostgreSqlDBBasicTest(unittest.TestCase):
+class MyMariaDBBasicTest(unittest.TestCase):
 
     def test_db_open_and_close(self):
-        conn = MyPostgreSqlDB(database=None, verbose=False).open()
-        self.assertIsInstance(conn, MyPostgreSqlDB)
+        conn = database.MyMariaDB(database=None, verbose=False).open()
+        self.assertIsInstance(conn, database.MyMariaDB)
         self.assertIsInstance(conn.cursor, mysql.connector.cursor.MySQLCursor)
 
         # Test invalid database name
         with self.assertRaises(mysql.connector.errors.ProgrammingError):
-            MyPostgreSqlDB(database='not_exist_db').open()
+            database.MyMariaDB(database='not_exist_db').open()
 
         # Open database twice
         with self.assertRaises(RuntimeError):
@@ -25,41 +24,41 @@ class MyPostgreSqlDBBasicTest(unittest.TestCase):
         self.assertIsNone(conn.cursor)
 
     def test_with_statement(self):
-        db = MyPostgreSqlDB(database=None, verbose=False)
+        db = database.MyMariaDB(database=None, verbose=False)
 
         with db as conn:
-            self.assertIsInstance(conn, MyPostgreSqlDB)
+            self.assertIsInstance(conn, database.MyMariaDB)
             self.assertIsInstance(conn.cursor, mysql.connector.cursor.MySQLCursor)
 
         self.assertIsNone(conn._conn)
         self.assertIsNone(conn.cursor)
 
-    # def test_db_already_exists(self):
-    #     with MyPostgreSqlDB(database=None, verbose=False) as conn:
-    #         self.assertTrue(conn.db_already_exists('INFORMATION_SCHEMA'))
-    #         self.assertTrue(conn.db_already_exists('mysql'))
-    #         self.assertTrue(conn.db_already_exists('PERFORMANCE_SCHEMA'))
-    #         self.assertFalse(conn.db_already_exists('no_such_database_name'))
+    def test_db_already_exists(self):
+        with database.MyMariaDB(database=None, verbose=False) as conn:
+            self.assertTrue(conn.db_already_exists('INFORMATION_SCHEMA'))
+            self.assertTrue(conn.db_already_exists('mysql'))
+            self.assertTrue(conn.db_already_exists('PERFORMANCE_SCHEMA'))
+            self.assertFalse(conn.db_already_exists('no_such_database_name'))
 
     def test_invalid_command(self):
-        with MyPostgreSqlDB(database=None, verbose=False) as conn:
+        with database.MyMariaDB(database=None, verbose=False) as conn:
             with self.assertRaises(mysql.connector.errors.ProgrammingError):
                 conn.execute_sql_command("invalid command;")
 
     def test_execute_sql_command_with_no_args(self):
-        with MyPostgreSqlDB(database=None, verbose=False) as conn:
+        with database.MyMariaDB(database=None, verbose=False) as conn:
             rv = conn.execute_sql_command("SHOW DATABASES;")
             self.assertIn(('mysql',), rv)
             self.assertIn(('performance_schema',), rv)
             self.assertIn(('information_schema',), rv)
 
 
-class MyPostgreSqlDBOperationsTest(unittest.TestCase):
+class MyMariaDBOperationsTest(unittest.TestCase):
 
     def setUp(self):
         self.tmp_db_name = 'my_unittest_temp_db'
         self.tmp_table_name = 'test_table'
-        self.conn = MyPostgreSqlDB(database=None, verbose=False).open()
+        self.conn = database.MyMariaDB(database=None, verbose=False).open()
 
     def tearDown(self):
         try:
