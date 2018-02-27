@@ -1,4 +1,3 @@
-import mysql.connector
 import psycopg2
 
 DEFAULT_DB_NAME = "mydb"
@@ -111,53 +110,4 @@ class MyPostgreSqlDB(MyDB):
                 raise
 
         # self._conn.commit()
-        return ret
-
-
-class MyMariaDB(MyDB):
-    """
-    Not tested yet since adding the base class 'MyDB'.
-    In fact I have moved my database to PostgreSQL,
-    so this class is not needed.
-    """
-
-    def __init__(self, db_host='localhost', db_user='root',
-                 db_password='12345', db_port=3306, database=DEFAULT_DB_NAME, verbose=True):
-        self.config = {
-            'host': db_host,
-            'user': db_user,
-            'password': db_password,
-            'port': db_port,
-            'database': database,
-            'charset': 'utf8',
-            'use_unicode': True,
-            'raise_on_warnings': True,
-            'get_warnings': True,
-        }
-        self.verbose = verbose
-        self._conn = None
-        self.cursor = None
-
-    def open(self):
-        if self._conn:
-            # nested with blocks are forbidden
-            raise RuntimeError('Already connected to database.')
-        else:
-            self._conn = mysql.connector.connect(**self.config)
-            self.cursor = self._conn.cursor()
-            if not self.cursor:
-                raise RuntimeError('Fail to establish a mysql cursor.')
-
-            if self.verbose:
-                print("[+] A database connection has been established.")
-
-            return self
-
-    def execute_sql_command(self, query, *args):
-        self.cursor.execute(query, args)
-        try:
-            ret = self.cursor.fetchall()
-        except mysql.connector.errors.InterfaceError as e:
-            ret = None
-
         return ret
