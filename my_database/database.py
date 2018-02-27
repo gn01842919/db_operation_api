@@ -1,11 +1,18 @@
+# Standard libraries
+import logging
+# PyPI
 import psycopg2
 
-DEFAULT_DB_NAME = "mydb"
-_tables = []
+log_format = '[%(levelname)s] %(message)s\n'
+
+
+class MyDBError(RuntimeError):
+    pass
 
 
 class MyDB:
-    def __init__(self):
+    def __init__(self, db_host, db_user, db_password,
+                 db_port, database, verbose):
         raise NotImplementedError("Base class 'MyDB' should not be instanciated.")
 
     def __enter__(self):
@@ -22,8 +29,7 @@ class MyDB:
         self._conn.close()
         self.cursor = None
         self._conn = None
-        if self.verbose:
-            print("[-] The database connection has been closed.")
+        logging.debug("The database connection has been closed.")
 
     def execute_sql_command(self, query, *args):
         raise NotImplementedError("Derived classes should implement execute_sql_command().")
@@ -67,10 +73,8 @@ class MyDB:
 class MyPostgreSqlDB(MyDB):
 
     def __init__(self, db_host='localhost', db_user='dja1', db_password='_MY_DB_PASSWORD_',
-                 db_port=5432, database=DEFAULT_DB_NAME, verbose=True):
+                 db_port=5432, database='template1', verbose=True):
 
-        # Note that variable 'database' can be None for MySQL (not using any database)
-        # But CANNOT be None for PostgreSQL!
         self.config = {
             'host': db_host,
             'user': db_user,
@@ -78,23 +82,29 @@ class MyPostgreSqlDB(MyDB):
             'port': db_port,
             'database': database,
         }
-        self.verbose = verbose
+
+        if verbose:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.WARNING
+
+        logging.basicConfig(level=log_level, format=log_format)
+
         self._conn = None
         self.cursor = None
 
     def open(self):
         if self._conn:
             # nested with blocks are forbidden
-            raise RuntimeError('Already connected to database.')
+            raise MyDBError('Already connected to database.')
         else:
             self._conn = psycopg2.connect(**self.config)
             self._conn.autocommit = True
             self.cursor = self._conn.cursor()
             if not self.cursor:
-                raise RuntimeError('Fail to establish a databae cursor.')
+                raise MyDBError('Fail to establish a databae cursor.')
 
-            if self.verbose:
-                print("[+] A database connection has been established.")
+            logging.debug("A database connection has been established.")
 
             return self
 

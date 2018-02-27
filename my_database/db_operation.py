@@ -1,62 +1,36 @@
-from database import MyPostgreSqlDB, DEFAULT_DB_NAME
-import psycopg2
+# Standard libraries
+import logging
+from database import MyPostgreSqlDB
 
 
-class _PgsqlDatabaseCreator:
+def create_database(db_name, conn):
+    if not conn.db_already_exists(db_name):
+        conn.execute_sql_command("CREATE DATABASE {};".format(db_name))
+    else:
+        logging.info('Database {} already exists.'.format(db_name))
 
-    def __init__(self, db_name, conn=None):
-        self.conn = conn
-        self.db_name = db_name
 
-    def create_database(self):
-        self._operate_on_datebase("CREATE DATABASE {};", self._already_exists)
+def drop_database_if_exists(db_name, conn):
+    conn.execute_sql_command("DROP DATABASE IF EXISTS {};".format(db_name))
 
-    def drop_database(self):
-        # self._operate_on_datebase("DROP DATABASE {};", self._not_yet_exist)
-        try:
-            self.conn.execute_sql_command("DROP DATABASE IF EXISTS {};".format(self.db_name))
-        except psycopg2.ProgrammingError as e:
-            pass  # 不該這樣寫，Except 應該統一處理掉，在 database.py
 
-    def _operate_on_datebase(self, sql_command, unwanted_condition):
-        # 這個寫法很難懂
-        # 現在有用 "DROP DATABASE IF EXISTS" 來處理，應該不需要這樣寫了
-        # 改掉
+def initialize_database(conn, db_name):
 
-        use_new_conn = False
+    drop_database_if_exists(db_name, conn)
 
-        if not self.conn:
-            # self.conn = MyMariaDB(database=None).open()
-            self.conn = MyPostgreSqlDB(database='template1').open()
+    logging.info("Initializing database '{}' and tables needed...".format(db_name))
 
-            use_new_conn = True
+    create_database(db_name, conn)
+    _create_my_tables(conn)
 
-        if not unwanted_condition():
-            self.conn.execute_sql_command(sql_command.format(self.db_name))
-        else:
-            print('[*] reached unwanted_condition')
 
-        if use_new_conn:
-            self.conn.close()
-
-    def _already_exists(self, show_msg=True):
-        """
-        The database (which should not have exist) exists
-        """
-        if self.conn.db_already_exists(self.db_name):
-            if show_msg:
-                print("[-] Database '{}' already exists".format(self.db_name))
-            return True
-        else:
-            return False
-
-    def _not_yet_exist(self):
-
-        if not self._already_exists(show_msg=False):
-            print("[*] Database '{}' does not exist".format(self.db_name))
-            return True
-        else:
-            return False
+def _create_my_tables(conn):
+    """
+    create database with name db_name
+    Do nothing if it already exists
+    """
+    creator = _PgsqlTableCreator(conn)
+    creator.create_all_tables()
 
 
 class _PgsqlTableCreator:
@@ -81,12 +55,12 @@ class _PgsqlTableCreator:
             ");"
         )
 
-        self._run_create(table_name, query)
+        self._create_table(table_name, query)
 
-    def _run_create(self, table_name, query, *args):
+    def _create_table(self, table_name, query, *args):
 
         if self.conn.table_already_exists(table_name):
-            print("[-] Table '{}' already exists. Skip it.".format(table_name))
+            logging.info("Table '{}' already exists. Skip it.".format(table_name))
             return False
         else:
             query = query.format(table_name)
@@ -94,61 +68,12 @@ class _PgsqlTableCreator:
             return True
 
 
-def initialize(db):
-    print("[*] Initializing database '{}' and tables needed...".format(DEFAULT_DB_NAME))
-    create_database(DEFAULT_DB_NAME)
-    _create_my_tables(db)
-
-
-def reset(sure=False):
-    """
-    Drop current database!!!
-    Use with caution!!!
-    """
-
-    if not sure:
-        print("[*] The database '{}' used by this program will be deleted!".format(DEFAULT_DB_NAME))
-        answer = input("    Are you sure? [y/n]")
-    else:
-        answer = ''
-
-    if sure or answer.upper() in ('Y', 'YES'):
-
-        with MyPostgreSqlDB(database='template1') as conn:
-            drop_database(DEFAULT_DB_NAME, conn)
-
-        print("[+] Droping database '{}' (if exists).".format(DEFAULT_DB_NAME))
-    else:
-        print("[-] The database '{}' will not be dropped.".format(DEFAULT_DB_NAME))
-
-
-def create_database(db_name, conn=None):
-    creator = _PgsqlDatabaseCreator(db_name, conn)
-    creator.create_database()
-
-
-def drop_database(db_name, conn=None):
-    creator = _PgsqlDatabaseCreator(db_name, conn)
-    creator.drop_database()
-
-
-def _create_my_tables(db):
-    """
-    create database with name db_name
-    Do nothing if it already exists
-    """
-    with db as conn:
-        creator = _PgsqlTableCreator(conn)
-        creator.create_all_tables()
-
-
 if __name__ == '__main__':
 
-    reset(sure=True)
+    test_db_name = "mydb"
 
-    # db = MyMariaDB()
-    db = MyPostgreSqlDB()
+    with MyPostgreSqlDB() as conn:
+        initialize_database(conn, test_db_name)
 
-    initialize(db)
-
-    reset(sure=True)
+    with MyPostgreSqlDB() as conn:
+        drop_database_if_exists(test_db_name, conn)
