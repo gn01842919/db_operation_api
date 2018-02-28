@@ -38,10 +38,22 @@ class MyDB(object):
         place_holder = ', '.join('%s' for i in range(len(args_map)))
         field_names = ', '.join(key for key in args_map.keys())
 
-        args = [val for val in args_map.values()]
+        args = (val for val in args_map.values())
 
         query = "INSERT INTO {} ({}) VALUES ({});".format(table_name, field_names, place_holder)
         self.execute_sql_command(query, *args)
+
+    def get_field_by_conditions(self, table_name, field_name, args_map):
+
+        conditions = " AND ".join("{} = %s".format(key) for key in args_map.keys())
+
+        args = (val for val in args_map.values())
+        query = (
+            "SELECT {} FROM {} WHERE {};"
+            .format(field_name, table_name, conditions)
+        )
+        rows = self.execute_sql_command(query, *args)
+        return rows
 
     def db_already_exists(self, db_name):
         query = (

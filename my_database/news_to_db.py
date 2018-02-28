@@ -51,6 +51,17 @@ class NewsDataToDB(object):
             last_modified_time=curr_time
         )
 
+    def _get_object_id(self, table_name, **kwargs):
+        table_name = self._add_prefix(table_name)
+        rows = self.conn.get_field_by_conditions(table_name, "id", kwargs)
+        if rows:
+            return rows[0][0]
+        else:
+            raise RuntimeError(
+                "Can not get entry id from table '{}' with condition {}."
+                .format(table_name, kwargs)
+            )
+
     def _insert_into_table(self, table_name, **kwargs):
         table_name = self._add_prefix(table_name)
         self.conn.insert_values_into_table(table_name, kwargs)
@@ -132,5 +143,6 @@ if __name__ == "__main__":
 
     with MyPostgreSqlDB(database="my_focus_news") as conn:
         d = NewsDataToDB(conn, table_prefix="shownews_")
+        print(d._get_object_id("newsdata", url='https://abc.cpm/56655'))
         d.store_a_scraping_rule_to_db(rule)
         d.store_a_rss_news_entry_to_db(news)
