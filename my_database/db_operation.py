@@ -1,10 +1,11 @@
 # Standard libraries
 import logging
 import random
-from database import MyPostgreSqlDB
 from datetime import datetime
 # PyPI
 import pytz
+# Local modules
+from database import MyPostgreSqlDB
 
 
 def insert_values_to_table(conn, table_name, args_map):

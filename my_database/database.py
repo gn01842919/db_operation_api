@@ -34,9 +34,16 @@ class MyDB(object):
     def execute_sql_command(self, query, *args):
         raise NotImplementedError("Derived classes should implement execute_sql_command().")
 
-    def db_already_exists(self, db_name):
-        # %s 引入之後，似乎會自帶引號!!??   如果 %s 用引號圍繞的話就搜不到結果
+    def insert_values_into_table(self, table_name, args_map):
+        place_holder = ', '.join('%s' for i in range(len(args_map)))
+        field_names = ', '.join(key for key in args_map.keys())
 
+        args = [val for val in args_map.values()]
+
+        query = "INSERT INTO {} ({}) VALUES ({});".format(table_name, field_names, place_holder)
+        self.execute_sql_command(query, *args)
+
+    def db_already_exists(self, db_name):
         query = (
             "SELECT EXISTS("
             "    SELECT datname FROM pg_catalog.pg_database"
@@ -48,13 +55,6 @@ class MyDB(object):
         return rows[0][0]
 
     def table_already_exists(self, table_name):
-
-        # current_db = self.execute_sql_command('SELECT DATABASE();')[0][0]
-
-        # query = ("SELECT table_name FROM INFORMATION_SCHEMA.TABLES "
-        #          "WHERE table_schema = '{}' AND table_name = %s LIMIT 1;"
-        #          .format(current_db))
-
         query = (
             "SELECT EXISTS ("
             "  SELECT 1 FROM pg_catalog.pg_class c"
