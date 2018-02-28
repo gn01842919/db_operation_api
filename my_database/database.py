@@ -10,7 +10,7 @@ class MyDBError(RuntimeError):
     pass
 
 
-class MyDB:
+class MyDB(object):
     def __init__(self, db_host, db_user, db_password,
                  db_port, database, verbose):
         raise NotImplementedError("Base class 'MyDB' should not be instanciated.")
@@ -73,7 +73,7 @@ class MyDB:
 class MyPostgreSqlDB(MyDB):
 
     def __init__(self, db_host='localhost', db_user='dja1', db_password='_MY_DB_PASSWORD_',
-                 db_port=5432, database='template1', verbose=True):
+                 db_port=5432, database='template1', verbose=False):
 
         self.config = {
             'host': db_host,
