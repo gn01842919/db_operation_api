@@ -82,7 +82,7 @@ class MyDB(object):
         return rows[0][0]
 
 
-class MyPostgreSqlDB(MyDB):
+class PostgreSqlDB(MyDB):
 
     def __init__(self, db_host='localhost', db_user='dja1', db_password='_MY_DB_PASSWORD_',
                  db_port=5432, database='template1', verbose=False):
