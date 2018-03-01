@@ -5,9 +5,10 @@ from datetime import datetime
 # PyPI
 import pytz
 # Local modules
-from database import MyPostgreSqlDB
+from mydb import PostgreSqlDB
 
 
+# duplicate in news_to_db.py
 def insert_values_to_table(conn, table_name, args_map):
 
     place_holder = ', '.join('%s' for i in range(len(args_map)))
@@ -97,7 +98,7 @@ if __name__ == '__main__':
 
     test_name = str(random.randint(1, 100000))
 
-    with MyPostgreSqlDB(database="my_focus_news") as conn:
+    with PostgreSqlDB(database="my_focus_news") as conn:
         insert_values_to_table(conn, 'shownews_newscategory', {'name': test_name})
 
         test_time = datetime(2017, 7, 4, 12, 30, 51, tzinfo=pytz.UTC)

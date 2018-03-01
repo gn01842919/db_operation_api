@@ -4,10 +4,10 @@ from datetime import datetime
 import pytz
 from psycopg2 import IntegrityError
 # Local modules
-from database import MyPostgreSqlDB
+from mydb import PostgreSqlDB
 
 
-class NewsDataToDB(object):
+class NewsDatabaseAPI(object):
     def __init__(self, conn, table_prefix=""):
         self.conn = conn
         self.table_prefix = table_prefix
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     )
     news.set_rules((rule,))
 
-    with MyPostgreSqlDB(database="my_focus_news") as conn:
-        d = NewsDataToDB(conn, table_prefix="shownews_")
+    with PostgreSqlDB(database="my_focus_news") as conn:
+        d = NewsDatabaseAPI(conn, table_prefix="shownews_")
         d.store_a_scraping_rule_to_db(rule)
         d.store_a_rss_news_entry_to_db(news)
