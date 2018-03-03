@@ -38,14 +38,35 @@ class MyDB(object):
         place_holder = ', '.join('%s' for i in range(len(args_map)))
         field_names = ', '.join(key for key in args_map.keys())
 
-        args = (val for val in args_map.values())
+        args = tuple(val for val in args_map.values())
 
         query = "INSERT INTO {} ({}) VALUES ({});".format(table_name, field_names, place_holder)
         self.execute_sql_command(query, *args)
 
+    def update_table(self, table_name, args_map, condition_map):
+        conditions = " AND ".join(
+            "{} = %s".format(key) for key in condition_map.keys()
+        )
+        fields = ', '.join(
+            "{} = %s".format(key) for key in args_map.keys()
+        )
+
+        args = (
+            tuple(val for val in args_map.values()) +
+            tuple(val for val in condition_map.values())
+        )
+
+        query = (
+            "UPDATE {} SET {} WHERE {};".format(table_name, fields, conditions)
+        )
+
+        self.execute_sql_command(query, *args)
+
     def get_field_by_conditions(self, table_name, field_name, args_map):
 
-        conditions = " AND ".join("{} = %s".format(key) for key in args_map.keys())
+        conditions = " AND ".join(
+            "{} = %s".format(key) for key in args_map.keys()
+        )
 
         args = (val for val in args_map.values())
         query = (
@@ -80,6 +101,10 @@ class MyDB(object):
         rows = self.execute_sql_command(query, table_name)
 
         return rows[0][0]
+
+    def reset_table(self, table_name):
+        query = "DELETE FROM {};".format(table_name)
+        self.execute_sql_command(query, table_name)
 
 
 class PostgreSqlDB(MyDB):
