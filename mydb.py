@@ -1,5 +1,8 @@
 """This module abstracts some common SQL operations.
 
+Attributes:
+    LOG_FORMAT (str): log format for the "logging" module
+
 Example:
     with PostgreSqlDB(**db_config) as conn:
         rows = conn.get_fields_by_conditions(
@@ -9,9 +12,6 @@ Example:
         )
     print(rows)
 
-Attributes:
-    log_format (str): log format for the "logging" module
-
 """
 
 # Standard libraries
@@ -19,10 +19,12 @@ import logging
 # PyPI
 import psycopg2
 
-log_format = "[%(levelname)s] %(message)s\n"
+LOG_FORMAT = "[%(levelname)s] %(message)s\n"
 
 
 class MyDBError(RuntimeError):
+    """Exceptions that will be raised by ``MyDB``.
+    """
     pass
 
 
@@ -30,7 +32,7 @@ class MyDB(object):
     """Base class for database connectors (such as PostgreSqlDB).
 
     This should not be instanciated directly.
-    Please inherit it and overide at least the following methods:
+    Please inherit it and override at least the following methods:
         __init__()
         open()
         execute_sql_command()
@@ -39,8 +41,23 @@ class MyDB(object):
 
     def __init__(self, db_host, db_user, db_password,
                  db_port, database, verbose):
-        """Must be overided by derived classes."""
-        raise NotImplementedError("Base class 'MyDB' must not be instanciated.")
+        self.config = {
+            "host": db_host,
+            "user": db_user,
+            "password": db_password,
+            "database": database,
+            "port": db_port,
+        }
+
+        self.cursor = None
+        self._conn = None
+
+        if verbose:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.WARNING
+
+        logging.basicConfig(level=log_level, format=LOG_FORMAT)
 
     def __enter__(self):
         return self.open()
@@ -49,7 +66,7 @@ class MyDB(object):
         self.close()
 
     def open(self):
-        """Must be overided by derived classes."""
+        """Must be overridden by derived classes."""
         raise NotImplementedError("Derived classes must implement open().")
 
     def close(self):
@@ -61,7 +78,7 @@ class MyDB(object):
         logging.debug("The database connection has been closed.")
 
     def execute_sql_command(self, query, *args):
-        """Must be overided by derived classes."""
+        """Must be overridden by derived classes."""
         raise NotImplementedError("Derived classes must implement execute_sql_command().")
 
     def insert_values_into_table(self, table_name, args_map):
@@ -217,23 +234,7 @@ class PostgreSqlDB(MyDB):
     def __init__(self, db_host, db_user, db_password,
                  db_port=5432, database="template1", verbose=False):
 
-        self.config = {
-            "host": db_host,
-            "user": db_user,
-            "password": db_password,
-            "database": database,
-            "port": db_port,
-        }
-
-        if verbose:
-            log_level = logging.DEBUG
-        else:
-            log_level = logging.WARNING
-
-        logging.basicConfig(level=log_level, format=log_format)
-
-        self._conn = None
-        self.cursor = None
+        super().__init__(db_host, db_user, db_password, db_port, database, verbose)
 
     def open(self):
         """Opens a database connection.
@@ -283,8 +284,8 @@ class PostgreSqlDB(MyDB):
         self.cursor.execute(query, args)
         try:
             ret = self.cursor.fetchall()
-        except psycopg2.ProgrammingError as e:
-            if "no results to fetch" in str(e):
+        except psycopg2.ProgrammingError as err:
+            if "no results to fetch" in str(err):
                 ret = None
             else:
                 raise
