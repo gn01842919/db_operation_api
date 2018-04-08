@@ -4,16 +4,14 @@ Attributes:
     LOG_FORMAT (str): log format for the "logging" module
 
 Example:
-    with get_database(DATABASE_CONFIG) as conn:
-        rows = conn.get_fields_by_conditions(
-            "table_name",
-            ("title", "content", "url"),
-            {"id": some_obj.id}
-        )
-    print(rows)
+    .. code-block:: python
+
+        database = get_database(DATABASE_CONFIG)
+        with database as conn:
+            rows = conn.get_fields_by_conditions("table_name",("title", "content"), {"id": 1})
+        print(rows)
 
 """
-
 # Standard libraries
 import logging
 # PyPI
@@ -46,9 +44,10 @@ class MyDB(object):
 
     This should not be instanciated directly.
     Please inherit it and override at least the following methods:
-        __init__()
-        open()
-        execute_sql_command()
+
+    * __init__()
+    * open()
+    * execute_sql_command()
 
     """
 
