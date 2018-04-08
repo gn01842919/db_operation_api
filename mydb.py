@@ -4,7 +4,7 @@ Attributes:
     LOG_FORMAT (str): log format for the "logging" module
 
 Example:
-    with PostgreSqlDB(**db_config) as conn:
+    with get_database(DATABASE_CONFIG) as conn:
         rows = conn.get_fields_by_conditions(
             "table_name",
             ("title", "content", "url"),
@@ -20,6 +20,19 @@ import logging
 import psycopg2
 
 LOG_FORMAT = "[%(levelname)s] %(message)s\n"
+
+
+def get_database(DATABASE_CONFIG):
+    """Get an instance of the database (subclass of MyDB).
+
+    Args:
+        DATABASE_CONFIG (dict): Database configuration.
+
+    Returns:
+        MyDB: An instance of a subclass of MyDB.
+
+    """
+    return PostgreSqlDB(**DATABASE_CONFIG)
 
 
 class MyDBError(RuntimeError):
