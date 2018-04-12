@@ -28,3 +28,6 @@ with PostgreSqlDB(**db_config) as conn:
     title, content, url = rows[0]
     print(title, content, url)
 ```
+
+## To-Do
+- 目前我設定 PostgreSQL 為 autocommit = True, 也就是預設不使用 transaction。應增加 transaction 的功能 (也許用 with statement)。
